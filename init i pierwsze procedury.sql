@@ -105,11 +105,12 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     RETURN QUERY
-    SELECT id, tytul, rezyser, data_wydania, czas_trwania, opis, gatunek_id
+    SELECT film.id, film.tytul, film.rezyser, film.data_wydania, film.czas_trwania, film.opis, film.gatunek_id
     FROM film
-    WHERE id = film_id;
+    WHERE film.id = film_id;
 END;
 $$;
+
 
 
 CREATE OR REPLACE PROCEDURE update_klient(

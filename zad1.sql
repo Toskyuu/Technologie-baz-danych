@@ -19,7 +19,8 @@ CREATE TABLE film (
     rezyser VARCHAR(100) NOT NULL,
     data_wydania DATE NOT NULL,
     czas_trwania INTEGER NOT NULL CHECK (czas_trwania > 0),
-    opis TEXT
+    opis TEXT,
+    gatunek_id INTEGER
 );
 
 CREATE TABLE seans (
@@ -76,11 +77,27 @@ ALTER TABLE bilet
     FOREIGN KEY (klient_id) REFERENCES klient(id) ON DELETE CASCADE;
 
 ALTER TABLE film
-    ADD COLUMN gatunek_id INTEGER NOT NULL;
-
-ALTER TABLE film
     ADD CONSTRAINT fk_film_gatunek
     FOREIGN KEY (gatunek_id) REFERENCES gatunek(id) ON DELETE CASCADE;
+
+
+-- Przykładowe inserty
+INSERT INTO sala (numer, ilosc_miejsc) VALUES (100, 100);
+
+INSERT INTO gatunek (nazwa) VALUES ('Komedia');
+
+INSERT INTO film (tytul, rezyser, data_wydania, czas_trwania, opis, gatunek_id) 
+VALUES ('Incepcja', 'Christopher Nolan', '2010-07-16', 148, 'Film science-fiction o podróżach w głąb snów.', 1);
+
+INSERT INTO seans (sala_id, film_id, godzina_rozpoczecia, godzina_zakonczenia) 
+VALUES (1, 1, '2024-04-02 18:00:00', '2024-04-02 20:30:00');
+
+INSERT INTO klient (imie, nazwisko, email) 
+VALUES ('Jan', 'Kowalski', 'jan.kowalski@example.com');
+
+INSERT INTO bilet (seans_id, klient_id, typ, cena) 
+VALUES (10, 3, 'normalny', 25.00);
+
 
 -- 3.2
 CREATE OR REPLACE PROCEDURE add_film(
@@ -99,6 +116,8 @@ BEGIN
 END;
 $$;
 
+CALL add_film('Matrix', 'Lana Wachowski, Lilly Wachowski', '1999-03-31', 136, 'Film science-fiction o wirtualnej rzeczywistości', 1);
+
 
 CREATE OR REPLACE PROCEDURE add_seans(
     p_sala_id INTEGER,
@@ -114,6 +133,7 @@ BEGIN
 END;
 $$;
 
+CALL add_seans(1, 1, '2024-04-05 18:00:00', '2024-04-05 20:30:00');
 
 CREATE OR REPLACE FUNCTION get_film_by_id(film_id INTEGER)
 RETURNS TABLE (id INTEGER, tytul VARCHAR, rezyser VARCHAR, data_wydania DATE, czas_trwania INTEGER, opis TEXT, gatunek_id INTEGER)
@@ -127,7 +147,7 @@ BEGIN
 END;
 $$;
 
-
+SELECT * FROM get_film_by_id(1);
 
 CREATE OR REPLACE PROCEDURE update_klient(
     p_id INTEGER,
@@ -144,6 +164,7 @@ BEGIN
 END;
 $$;
 
+CALL update_klient(1, 'Adam', 'Nowak', 'adam.nowak@example.com');
 
 CREATE OR REPLACE FUNCTION calculate_bilet_price(bilet_typ VARCHAR)
 RETURNS DECIMAL(6,2)
@@ -159,6 +180,8 @@ BEGIN
     END IF;
 END;
 $$;
+
+SELECT calculate_bilet_price('normalny');
 
 CREATE OR REPLACE PROCEDURE reserve_bilet(
     p_seans_id INTEGER,
@@ -191,6 +214,9 @@ BEGIN
 END;
 $$;
 
+CALL reserve_bilet(1, 1, 'ulgowy');
+
+
 -- 4.2
 CREATE OR REPLACE PROCEDURE add_klient(
     p_imie VARCHAR,
@@ -210,6 +236,7 @@ BEGIN
 END;
 $$;
 
+CALL add_klient('Ewa', 'Kowalska', 'ewa.kowalska@example.com');
 
 CREATE OR REPLACE FUNCTION count_bilety_by_klient(p_klient_id INTEGER)
 RETURNS INTEGER
@@ -226,6 +253,8 @@ BEGIN
     RETURN v_count;
 END;
 $$;
+
+SELECT count_bilety_by_klient(1);
 
 CREATE OR REPLACE PROCEDURE remove_old_seanse()
 LANGUAGE plpgsql
@@ -245,6 +274,8 @@ BEGIN
     CLOSE cur;
 END;
 $$;
+
+CALL remove_old_seanse();
 
 CREATE OR REPLACE PROCEDURE add_seans_na_calydzien(
     p_sala_id INTEGER,
@@ -270,6 +301,9 @@ BEGIN
     END LOOP;
 END;
 $$;
+
+CALL add_seans_na_calydzien(1, 1, '2024-04-05 10:00:00');
+
 
 -- 4.3
 CREATE OR REPLACE FUNCTION sprawdz_konflikty_seansow() 

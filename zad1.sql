@@ -330,6 +330,10 @@ BEFORE INSERT ON seans
 FOR EACH ROW
 EXECUTE FUNCTION sprawdz_konflikty_seansow();
 
+INSERT INTO seans (id, sala_id, godzina_rozpoczecia, godzina_zakonczenia) 
+VALUES (1, 101, '2025-04-02 18:00:00', '2025-04-02 20:00:00');
+
+
 CREATE OR REPLACE FUNCTION przed_wstawieniem_klienta() 
 RETURNS TRIGGER AS $$
 BEGIN
@@ -342,6 +346,10 @@ CREATE TRIGGER przed_wstawieniem_klienta_trigger
 BEFORE INSERT ON klient
 FOR EACH ROW
 EXECUTE FUNCTION przed_wstawieniem_klienta();
+
+INSERT INTO klient (id, imie, nazwisko, email) 
+VALUES (1, 'Jan', 'Kowalski', 'TestowyEmail@Domena.PL');
+
 
 CREATE OR REPLACE FUNCTION check_bilet_delete()
 RETURNS trigger AS $$
@@ -364,6 +372,7 @@ BEFORE DELETE ON bilet
 FOR EACH ROW
 EXECUTE FUNCTION check_bilet_delete();
 
+DELETE FROM bilet WHERE id = 1;
 
 CREATE OR REPLACE FUNCTION after_insert_bilet_log()
 RETURNS TRIGGER AS $$
@@ -378,6 +387,9 @@ CREATE TRIGGER after_insert_bilet_log_trigger
 AFTER INSERT ON bilet
 FOR EACH ROW
 EXECUTE FUNCTION after_insert_bilet_log();
+
+INSERT INTO bilet (id, seans_id, klient_id, typ, cena, data_zakupu) 
+VALUES (2, 1, 1, 'ulgowy', 25.00, NOW());
 
 
 -- Instalacja rozszerzenia pg_cron

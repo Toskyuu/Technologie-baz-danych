@@ -395,27 +395,18 @@ VALUES (2, 1, 1, 'ulgowy', 25.00, NOW());
 -- Instalacja rozszerzenia pg_cron
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
--- Harmonogram usuwania starych seansów
 SELECT cron.schedule(
     'delete_old_seances',
     '0 0 * * *',
     'CALL remove_old_seanse();'
 );
 
--- Harmonogram aktualizacji raportu co godzinę
-SELECT cron.schedule(
-    'update_report',
-    '0 * * * *',
-    'CALL update_klient(...)'
-);
-
-
--- Harmonogram zadania co minutę
 SELECT cron.schedule(
     'minute_task',
     '* * * * *',
-    'SELECT * FROM some_table;'
+    'CALL update_klient(1, ''NoweImie'', ''NoweNazwisko'', ''nowy.email@example.com'');'
 );
+
 
 
 -- Wyświetlenie zaplanowanych zadań

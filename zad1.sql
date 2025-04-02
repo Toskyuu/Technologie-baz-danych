@@ -291,6 +291,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE TRIGGER przed_wstawieniem_seansu_trigger
+BEFORE INSERT ON seans
+FOR EACH ROW
+EXECUTE FUNCTION sprawdz_konflikty_seansow();
 
 CREATE OR REPLACE FUNCTION przed_wstawieniem_klienta() 
 RETURNS TRIGGER AS $$
@@ -321,7 +325,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER before_bilet_delete
+CREATE TRIGGER before_bilet_delete_trigger
 BEFORE DELETE ON bilet
 FOR EACH ROW
 EXECUTE FUNCTION check_bilet_delete();
@@ -336,7 +340,7 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-CREATE TRIGGER trigger_after_insert_bilet_log
+CREATE TRIGGER after_insert_bilet_log_trigger
 AFTER INSERT ON bilet
 FOR EACH ROW
 EXECUTE FUNCTION after_insert_bilet_log();

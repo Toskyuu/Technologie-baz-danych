@@ -222,4 +222,14 @@ $$;
 
 CALL load_district_data(5, 1, 'Rejon V', ARRAY[51.754, 51.755, 51.756, 51.754], ARRAY[19.455, 19.457, 19.459, 19.455]);
 
+CREATE OR REPLACE PROCEDURE set_route_srid(srid INTEGER)
+AS $$
+BEGIN
+    UPDATE patrol_routes
+    SET route = ST_Transform(route, srid)
+    WHERE ST_SRID(route) = 0;
+END;
+$$ LANGUAGE plpgsql;
+
+CALL set_route_srid(3857);
 

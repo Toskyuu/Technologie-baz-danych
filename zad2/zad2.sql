@@ -233,3 +233,14 @@ $$ LANGUAGE plpgsql;
 
 CALL set_route_srid(3857);
 
+CREATE OR REPLACE FUNCTION  build_all_districts_area()
+RETURNS GEOMETRY AS $$
+BEGIN
+    RETURN (
+        SELECT ST_Union(area)
+        FROM  districts
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+select * from build_all_districts_area()

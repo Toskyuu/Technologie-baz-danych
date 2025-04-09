@@ -1,4 +1,4 @@
--- Jakub Stępnicki
+-- Jakub Stępnicki 259315
 -- Robert Łaski 259337
 
 -- SQL TWORZĄCY
@@ -243,4 +243,148 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-select * from build_all_districts_area()
+select * from build_all_districts_area();
+
+CREATE OR REPLACE FUNCTION get_district_area(p_district_id INT)
+RETURNS NUMERIC AS $$
+DECLARE
+    district_geom GEOMETRY;
+    area_value NUMERIC;
+BEGIN
+    SELECT area INTO district_geom
+    FROM districts
+    WHERE id = p_district_id;
+
+    IF district_geom IS NULL THEN
+        RAISE EXCEPTION 'Rejon o ID % nie istnieje', p_district_id;
+    END IF;
+
+    area_value := ST_Area(district_geom);
+    RETURN area_value;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Przykład użycia:
+-- SELECT get_district_area(1);
+
+-- Obliczanie odległości między dwoma punktami (np. komisariatami)
+CREATE OR REPLACE FUNCTION get_distance_between_stations(p_station_id1 INT, p_station_id2 INT)
+RETURNS NUMERIC AS $$
+DECLARE
+    point1 GEOMETRY;
+    point2 GEOMETRY;
+    distance_value NUMERIC;
+BEGIN
+    SELECT location INTO point1
+    FROM police_stations
+    WHERE id = p_station_id1;
+
+    SELECT location INTO point2
+    FROM police_stations
+    WHERE id = p_station_id2;
+
+    IF point1 IS NULL OR point2 IS NULL THEN
+        RAISE EXCEPTION 'Jeden lub oba komisariaty o podanych ID nie istnieją';
+    END IF;
+
+    distance_value := ST_Distance(point1, point2);
+    RETURN distance_value;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Przykład użycia:
+-- SELECT get_distance_between_stations(1, 2);
+
+-- Wyznaczanie komisariatu znajdującego się w danym zakresie (prostokątnym oknem)
+CREATE OR REPLACE FUNCTION find_stations_in_bbox(
+    p_min_lon NUMERIC,
+    p_min_lat NUMERIC,
+    p_max_lon NUMERIC,
+    p_max_lat NUMERIC
+)
+RETURNS TABLE (id INT, name VARCHAR, address TEXT, location GEOMETRY) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT ps.id, ps.name, ps.address, ps.location
+    FROM police_stations ps
+    WHERE ps.location && ST_MakeBox2D(ST_MakePoint(p_min_lon, p_min_lat), ST_MakePoint(p_max_lon, p_max_lat));
+END;
+$$ LANGUAGE plpgsql;
+
+-- Przykład użycia:
+-- SELECT * FROM find_stations_in_bbox(19.45, 51.76, 19.46, 51.77);
+
+-- Wyznaczanie rejonów zawierających dany punkt (np. zgłoszenie)
+CREATE OR REPLACE FUNCTION find_district_containing_point(p_longitude NUMERIC, p_latitude NUMERIC)
+RETURNS TABLE (id INT, station_id INT, name VARCHAR, area GEOMETRY) AS $$
+DECLARE
+    point_geom GEOMETRY;
+BEGIN
+    point_geom := ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326);
+    RETURN QUERY
+    SELECT d.id, d.station_id, d.name, d.area
+    FROM districts d
+    WHERE ST_Contains(d.area, point_geom);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Przykład użycia:
+-- SELECT * FROM find_district_containing_point(19.456, 51.755);
+
+-- PROCEDURY DO WALIDACJI GEOMETRII
+
+-- Walidacja poprawności geometrii rejonu
+CREATE OR REPLACE FUNCTION validate_district_geometry(p_district_id INT)
+RETURNS TEXT AS $$
+DECLARE
+    district_geom GEOMETRY;
+    validation_result TEXT;
+BEGIN
+    SELECT area INTO district_geom
+    FROM districts
+    WHERE id = p_district_id;
+
+    IF district_geom IS NULL THEN
+        RETURN 'Rejon o ID ' || p_district_id || ' nie istnieje';
+    END IF;
+
+    IF ST_IsValid(district_geom) THEN
+        validation_result := 'Geometria rejonu o ID ' || p_district_id || ' jest poprawna';
+    ELSE
+        validation_result := 'Geometria rejonu o ID ' || p_district_id || ' jest niepoprawna. Powód: ' || ST_IsValidReason(district_geom);
+    END IF;
+
+    RETURN validation_result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Przykład użycia:
+-- SELECT validate_district_geometry(1);
+
+-- Walidacja poprawności geometrii trasy patrolu
+CREATE OR REPLACE FUNCTION validate_patrol_route_geometry(p_route_id INT)
+RETURNS TEXT AS $$
+DECLARE
+    route_geom GEOMETRY;
+    validation_result TEXT;
+BEGIN
+    SELECT route INTO route_geom
+    FROM patrol_routes
+    WHERE id = p_route_id;
+
+    IF route_geom IS NULL THEN
+        RETURN 'Trasa patrolu o ID ' || p_route_id || ' nie istnieje';
+    END IF;
+
+    IF ST_IsValid(route_geom) THEN
+        validation_result := 'Geometria trasy patrolu o ID ' || p_route_id || ' jest poprawna';
+    ELSE
+        validation_result := 'Geometria trasy patrolu o ID ' || p_route_id || ' jest niepoprawna. Powód: ' || ST_IsValidReason(route_geom);
+    END IF;
+
+    RETURN validation_result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Przykład użycia:
+-- SELECT validate_patrol_route_geometry(1);

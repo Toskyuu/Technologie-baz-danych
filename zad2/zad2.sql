@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS police_stations (
 
 CREATE TABLE IF NOT EXISTS patrol_routes (
     id SERIAL PRIMARY KEY,
+    station_id INT REFERENCES police_stations(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     route GEOMETRY(LineString, 4326) NOT NULL
 );
@@ -46,27 +47,27 @@ VALUES
     ('Komisariat III', 'ul. Armii Krajowej 33, 94-046 Łódź', ST_SetSRID(ST_MakePoint(19.391293, 51.770892), 4326))
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO patrol_routes (name, route)
+INSERT INTO patrol_routes (station_id, name, route)
 VALUES
-    ('Patrol I', ST_SetSRID(ST_MakeLine(ARRAY[
+    (1, 'Patrol I', ST_SetSRID(ST_MakeLine(ARRAY[
         ST_MakePoint(19.456, 51.755),
         ST_MakePoint(19.457, 51.756),
         ST_MakePoint(19.458, 51.757)
     ]), 4326))
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO patrol_routes (name, route)
+INSERT INTO patrol_routes (station_id, name, route)
 VALUES
-    ('Patrol II', ST_SetSRID(ST_MakeLine(ARRAY[
+    (2, 'Patrol II', ST_SetSRID(ST_MakeLine(ARRAY[
         ST_MakePoint(19.398, 51.759),
         ST_MakePoint(19.399, 51.760),
         ST_MakePoint(19.400, 51.761)
     ]), 4326))
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO patrol_routes (name, route)
+INSERT INTO patrol_routes (station_id, name, route)
 VALUES
-    ('Patrol III', ST_SetSRID(ST_MakeLine(ARRAY[
+    (3, 'Patrol III', ST_SetSRID(ST_MakeLine(ARRAY[
         ST_MakePoint(19.391, 51.771),
         ST_MakePoint(19.392, 51.772),
         ST_MakePoint(19.393, 51.773)

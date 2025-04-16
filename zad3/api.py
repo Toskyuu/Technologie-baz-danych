@@ -1,7 +1,9 @@
 from datetime import datetime
 from typing import Optional
+
 from bson import ObjectId
 from fastapi import FastAPI
+
 from config import db
 
 app = FastAPI()
@@ -167,6 +169,24 @@ def get_completed_tasks_count():
 def get_tasks_count_in_project(project_id: str):
     count = tasks_col.count_documents({"project_id": ObjectId(project_id)})
     return {"project_id": project_id, "tasks_count": count}
+
+# Agregacja: Liczba zadań w projekcie przy pomocy aggregation pipeline
+
+@app.get("/tasks/{project_id}/count/aggregation_pipeline")
+def get_tasks_count_in_project_pipeline(project_id: str):
+    pipeline = [
+        {"$match": {"project_id": ObjectId(project_id)}},
+        {"$group": {"_id": "$project_id", "tasks_count": {"$sum": 1}}}
+    ]
+
+    result = list(tasks_col.aggregate(pipeline))
+    if not result:
+        return {"project_id": project_id, "tasks_count": 0}
+
+    return {
+        "project_id": project_id,
+        "tasks_count": result[0]["tasks_count"]
+    }
 
 
 # Agregacja: Liczba zadań dla każdego uzytkownika

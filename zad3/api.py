@@ -157,6 +157,38 @@ async def get_user_details(user_id: str):
     return user_details
 
 
+db.command({
+    "create": "user_tasks_view",
+    "viewOn": "tasks",
+    "pipeline": [
+        {"$lookup": {
+            "from": "users",
+            "localField": "user_id",
+            "foreignField": "_id",
+            "as": "user"
+        }},
+        {"$unwind": "$user"},
+        {"$project": {
+            "_id": 0,
+            "task_id": "$_id",
+            "title": 1,
+            "status": 1,
+            "user_name": "$user.name",
+            "user_email": "$user.email"
+        }}
+    ]
+})
+
+
+@app.get("/views/user-tasks/")
+def get_user_tasks_view():
+    view_data = list(db["user_tasks_view"].find())
+    for item in view_data:
+        if "task_id" in item and isinstance(item["task_id"], ObjectId):
+            item["task_id"] = str(item["task_id"])
+    return {"user_tasks": view_data}
+
+
 # Agregacja: liczba zakończonych zadań
 @app.get("/tasks/completed-count")
 def get_completed_tasks_count():
@@ -169,6 +201,7 @@ def get_completed_tasks_count():
 def get_tasks_count_in_project(project_id: str):
     count = tasks_col.count_documents({"project_id": ObjectId(project_id)})
     return {"project_id": project_id, "tasks_count": count}
+
 
 # Agregacja: Liczba zadań w projekcie przy pomocy aggregation pipeline
 
